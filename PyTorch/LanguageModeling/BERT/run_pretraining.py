@@ -50,6 +50,7 @@ from schedulers import LinearWarmUpScheduler
 import dllogger
 
 import lddl.torch
+import torchdynamo
 
 # Track whether a SIGTERM (cluster time up) has been handled
 timeout_sent = False
@@ -408,8 +409,8 @@ def prepare_model_and_optimizer(args, device, sequence_output_is_dense):
     if args.fp16 and args.allreduce_post_accumulation_fp16:
         model.half()
 
-    if not args.disable_jit_fusions :
-        model = torch.jit.script(model)
+    #if not args.disable_jit_fusions :
+    #    model = torch.jit.script(model)
 
     param_optimizer = list(model.named_parameters())
     no_decay = ['bias', 'gamma', 'beta', 'LayerNorm']
@@ -668,11 +669,12 @@ def main():
             else:
                 batch = {k: v.to(device, non_blocking=True) for k, v in batch.items()}
 
-                if args.allreduce_post_accumulation and grad_accumulation_step:
-                    with model.no_sync():
+                with torchdynamo.optimize('aot_nvfuser') :
+                    if args.allreduce_post_accumulation and grad_accumulation_step:
+                        with model.no_sync():
+                            take_training_step(args, grad_scaler, model, criterion, batch, stats)
+                    else:
                         take_training_step(args, grad_scaler, model, criterion, batch, stats)
-                else:
-                    take_training_step(args, grad_scaler, model, criterion, batch, stats)
 
                 if not grad_accumulation_step:
                     take_optimizer_step(args, lr_scheduler, optimizer, grad_scaler, device, stats)
