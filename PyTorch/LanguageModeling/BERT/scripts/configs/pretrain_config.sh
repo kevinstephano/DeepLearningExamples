@@ -134,7 +134,8 @@ dgx1-32g_8gpu_fp16 ()
     DATASET=pretrain/phase1/unbinned/parquet # change this for other datasets
     DATA_DIR_PHASE1="$BERT_PREP_WORKING_DIR/${DATASET}/"
     BERT_CONFIG=bert_configs/large.json
-    CODEDIR="/workspace/bert"
+    #CODEDIR="/workspace/bert"
+    CODEDIR="/workspace/bert_ddp_example/PyTorch/LanguageModeling/BERT"
     init_checkpoint="None"
     DATASET2=pretrain/phase2/bin_size_64/parquet # change this for other datasets
     DATA_DIR_PHASE2="$BERT_PREP_WORKING_DIR/${DATASET2}/"
